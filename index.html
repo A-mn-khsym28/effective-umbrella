@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizOps — Manajemen Bisnis</title>
+    <meta name="description" content="Aplikasi manajemen bisnis: penjualan, stok, HPP, dan laporan Profit & Loss">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Confirm Dialog -->
+    <div id="confirm-dialog" class="modal-overlay" style="display:none;">
+        <div class="modal-card confirm-card">
+            <div class="confirm-icon">
+                <i data-lucide="alert-triangle"></i>
+            </div>
+            <h3 id="confirm-title">Konfirmasi</h3>
+            <p id="confirm-message">Apakah Anda yakin?</p>
+            <div class="confirm-actions">
+                <button id="confirm-cancel" class="btn btn-ghost">Batal</button>
+                <button id="confirm-ok" class="btn btn-danger">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Shell -->
+    <div class="app-shell">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i data-lucide="bar-chart-3"></i>
+                    </div>
+                    <div class="brand-text">
+                        <h1>BizOps</h1>
+                        <span>Business Manager</span>
+                    </div>
+                </div>
+                <button class="sidebar-close-btn" id="sidebar-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="#dashboard" class="nav-link active" data-page="dashboard">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#materials" class="nav-link" data-page="materials">
+                            <i data-lucide="boxes"></i>
+                            <span>Bahan Mentah</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#products" class="nav-link" data-page="products">
+                            <i data-lucide="package"></i>
+                            <span>Produk</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#sales" class="nav-link" data-page="sales">
+                            <i data-lucide="shopping-cart"></i>
+                            <span>Penjualan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#reports" class="nav-link" data-page="reports">
+                            <i data-lucide="file-bar-chart"></i>
+                            <span>Laporan</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-footer-item">
+                    <button id="btn-export-backup" class="btn btn-ghost btn-sm btn-block">
+                        <i data-lucide="download"></i>
+                        <span>Export Backup</span>
+                    </button>
+                </div>
+                <div class="sidebar-footer-item">
+                    <button id="btn-import-backup" class="btn btn-ghost btn-sm btn-block">
+                        <i data-lucide="upload"></i>
+                        <span>Import Backup</span>
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json" style="display:none;">
+                </div>
+                <div class="sidebar-footer-info">
+                    <span class="version-text">v1.0.0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Header -->
+        <header class="mobile-header" id="mobile-header">
+            <button class="hamburger-btn" id="hamburger-btn">
+                <i data-lucide="menu"></i>
+            </button>
+            <div class="mobile-brand">
+                <div class="brand-icon brand-icon-sm">
+                    <i data-lucide="bar-chart-3"></i>
+                </div>
+                <h1>BizOps</h1>
+            </div>
+            <div class="mobile-header-spacer"></div>
+        </header>
+
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+
+            <!-- Page: Dashboard -->
+            <section class="page" id="page-dashboard">
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                    <p class="page-subtitle" id="dashboard-date"></p>
+                </div>
+                <div class="page-body" id="dashboard-content">
+                    <!-- Populated by dashboard.js -->
+                    <div class="skeleton-grid">
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card skeleton-wide"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Bahan Mentah -->
+            <section class="page" id="page-materials" style="display:none;">
+                <div class="page-header">
+                    <h2>Bahan Mentah</h2>
+                    <button class="btn btn-primary" id="btn-add-material">
+                        <i data-lucide="plus"></i>
+                        <span>Tambah Bahan</span>
+                    </button>
+                </div>
+                <div class="page-body" id="materials-content">
+                    <div class="skeleton-grid">
+                        <div class="skeleton-card skeleton-wide"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Produk -->
+            <section class="page" id="page-products" style="display:none;">
+                <div class="page-header">
+                    <h2>Produk</h2>
+                    <button class="btn btn-primary" id="btn-add-product">
+                        <i data-lucide="plus"></i>
+                        <span>Tambah Produk</span>
+                    </button>
+                </div>
+                <div class="page-body" id="products-content">
+                    <div class="skeleton-grid">
+                        <div class="skeleton-card skeleton-wide"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Penjualan -->
+            <section class="page" id="page-sales" style="display:none;">
+                <div class="page-header">
+                    <h2>Penjualan</h2>
+                    <button class="btn btn-primary" id="btn-new-sale">
+                        <i data-lucide="plus"></i>
+                        <span>Transaksi Baru</span>
+                    </button>
+                </div>
+                <div class="page-body" id="sales-content">
+                    <div class="skeleton-grid">
+                        <div class="skeleton-card skeleton-wide"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page: Laporan -->
+            <section class="page" id="page-reports" style="display:none;">
+                <div class="page-header">
+                    <h2>Laporan</h2>
+                    <div class="page-header-actions">
+                        <button class="btn btn-accent" id="btn-export-excel">
+                            <i data-lucide="file-spreadsheet"></i>
+                            <span>Export Excel</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="page-body" id="reports-content">
+                    <div class="skeleton-grid">
+                        <div class="skeleton-card skeleton-wide"></div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal Container (for forms) -->
+    <div id="modal-container"></div>
+
+    <!-- App Scripts (ES6 modules) -->
+    <script src="db.js"></script>
+    <script src="modules/dashboard.js"></script>
+    <script src="modules/materials.js"></script>
+    <script src="modules/products.js"></script>
+    <script src="modules/sales.js"></script>
+    <script src="modules/reports.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
